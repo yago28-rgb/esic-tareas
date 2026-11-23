@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel DAW+DAM</title>
+<meta name="description" content="Panel personal de tareas y exámenes del curso DAW + DAM.">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Panel DAW">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* Disposición: título grande, tres vistas (Tareas, Exámenes, Ajustes), barra de pestañas inferior y hojas modales. */
+:root {
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --bg: #F2F2F7;
+  --surface: #FFFFFF;
+  --fill: rgba(118, 118, 128, 0.14);
+  --line: rgba(60, 60, 67, 0.16);
+  --fg: #1D1D1F;
+  --muted: #6E6E73;
+  --accent: #0071E3;
+  --accent-fg: #FFFFFF;
+  --accent-text: #0066CC;
+  --ok: #248A3D;
+  --warn: #B25000;
+  --crit: #D70015;
+  --scrim: rgba(0, 0, 0, 0.32);
+  --bar-bg: rgba(249, 249, 251, 0.82);
+  --lift: 64px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.06), 0 10px 28px rgba(0, 0, 0, 0.09);
+  --dot: 52%;
+  --dot-s: 80%;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1C1C1E;
+    --fill: rgba(118, 118, 128, 0.24);
+    --line: rgba(84, 84, 88, 0.5);
+    --fg: #F5F5F7;
+    --muted: #98989F;
+    --accent: #0A84FF;
+    --accent-fg: #FFFFFF;
+    --accent-text: #2997FF;
+    --ok: #30D158;
+    --warn: #FF9F0A;
+    --crit: #FF6961;
+    --scrim: rgba(0, 0, 0, 0.55);
+    --bar-bg: rgba(22, 22, 24, 0.82);
+    --shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.07);
+    --shadow-hover: 0 0 0 0.5px rgba(255, 255, 255, 0.14);
+    --dot: 60%;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+  padding-top: max(28px, calc(env(safe-area-inset-top, 0px) + 16px));
+  padding-bottom: calc(110px + var(--lift) + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body.is-locked { overflow: hidden; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.view > *, .wrap > * { min-width: 0; }
+html, body { overflow-x: hidden; }
+
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.eyebrow { margin: 0 0 6px; font: 500 14px/1.2 var(--font-body); color: var(--muted); }
+h1 { margin: 0; font-size: clamp(32px, 7vw, 40px); line-height: 1.05; font-weight: 700; letter-spacing: -0.025em; }
+.head-new { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; }
+.hn-plus { font-size: 30px; line-height: 1; font-weight: 300; margin-top: -2px; }
+.hn-text { display: none; }
+
+.btn {
+  font: 500 14px/1 var(--font-body);
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 980px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+.btn:hover { background: color-mix(in srgb, var(--accent) 19%, transparent); }
+.btn:active { transform: scale(0.97); }
+.btn:focus-visible, .ttl:focus-visible, .fchip:focus-visible, .add:focus-visible, .tab:focus-visible, .segbtn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+.btn.primary { background: var(--accent); color: var(--accent-fg); }
+.btn.primary:hover { background: var(--accent); filter: brightness(1.08); }
+.btn.mini { padding: 7px 12px; font-size: 13px; }
+.btn.danger { color: var(--crit); background: color-mix(in srgb, var(--crit) 11%, transparent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.note { border-radius: 14px; padding: 12px 16px; font-size: 14px; color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--surface)); }
+
+/* Añadido rápido (solo pantallas anchas) */
+.quick { display: none; grid-template-columns: minmax(200px, 1fr) minmax(130px, 180px) 160px auto; gap: 8px; }
+.quick input, .quick select { background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 14px; }
+.quick .btn { align-self: stretch; padding-inline: 20px; }
+
+/* Franja de resumen */
+.strip { display: flex; flex-wrap: wrap; gap: 14px 40px; align-items: center; justify-content: space-between; background: var(--surface); box-shadow: var(--shadow); border-radius: 18px; padding: 18px 22px; }
+.prog { flex: 1 1 240px; min-width: 0; display: grid; gap: 10px; }
+.prog-l { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.bar { height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.next { flex: 1 1 240px; min-width: 0; display: grid; gap: 3px; }
+.next .lbl { font: 600 12px/1.2 var(--font-body); letter-spacing: 0.02em; color: var(--muted); }
+.next .what { font-weight: 600; font-size: 16px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.next .when { font-size: 13px; color: var(--muted); }
+.next .over-n { color: var(--crit); font-weight: 500; }
+
+/* Filtros, búsqueda y control segmentado */
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.filters { display: flex; flex-wrap: nowrap; gap: 8px; flex: 1 1 100%; min-width: 0; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -2px; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.search { flex: 1 1 100%; -webkit-appearance: none; appearance: none; }
+.fchip { flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 0; border-radius: 980px; background: var(--surface); box-shadow: var(--shadow); color: var(--fg); font: 500 13px/1.2 var(--font-body); cursor: pointer; }
+.fchip:active { transform: scale(0.97); }
+.fchip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.fchip .dot { width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--h) var(--dot-s) var(--dot)); }
+.fchip .n { font-size: 12px; opacity: 0.65; }
+
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; border-radius: 10px; background: var(--fill); }
+.segbtn { border: 0; background: transparent; color: var(--fg); font: 500 13px/1.2 var(--font-body); padding: 8px 6px; border-radius: 8px; cursor: pointer; }
+.segbtn[aria-selected="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); font-weight: 600; }
+.segbtn .n { color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+/* Tablero de tareas */
+.board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
+.col { display: none; padding: 6px; margin: -6px; border-radius: 20px; gap: 12px; min-width: 0; min-height: 120px; align-content: start; }
+.col.active { display: grid; }
+.col.over { background: color-mix(in srgb, var(--accent) 9%, transparent); outline: 2px dashed color-mix(in srgb, var(--accent) 50%, transparent); outline-offset: -2px; }
+.col-head { display: none; align-items: baseline; gap: 10px; padding: 2px 4px 0; }
+.col-head h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.col-head .n { font-size: 15px; color: var(--muted); }
+.none { margin: 0; padding: 18px 4px; font-size: 14px; color: var(--muted); }
+
+.card { background: var(--surface); box-shadow: var(--shadow); border-radius: 16px; padding: 14px 16px 12px; display: grid; gap: 9px; min-width: 0; }
+.card[draggable="true"] { cursor: grab; }
+.card.drag { opacity: 0.45; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1.2 var(--font-body); color: var(--muted); }
+.dt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--h) var(--dot-s) var(--dot)); }
+.kind { font-size: 13px; color: var(--muted); }
+.kind::before { content: "·"; margin-right: 10px; }
+.ex { font: 500 11px/1 var(--font-body); color: var(--muted); background: var(--fill); border-radius: 980px; padding: 3px 8px; }
+.hi { font: 600 11px/1 var(--font-body); color: var(--crit); background: color-mix(in srgb, var(--crit) 12%, transparent); border-radius: 980px; padding: 3px 8px; }
+.ttl { background: none; border: 0; padding: 0; margin: 0; font: 600 16px/1.3 var(--font-body); letter-spacing: -0.011em; color: var(--fg); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.ttl:hover { color: var(--accent-text); }
+.card.is-done .ttl { color: var(--muted); }
+.notes { margin: 0; font-size: 14px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.cks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ck { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 400; color: var(--fg); cursor: pointer; }
+.ck input { width: 20px; height: 20px; margin-top: 0; }
+.ck span { min-width: 0; overflow-wrap: anywhere; }
+.ck span.dn { color: var(--muted); text-decoration: line-through; }
+.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.due { font: 500 13px/1.3 var(--font-body); color: var(--fg); }
+.due.none, .due.done { color: var(--muted); font-weight: 400; }
+.due.soon { color: var(--warn); }
+.due.over { color: var(--crit); }
+.cnt { font-size: 13px; color: var(--muted); }
+.add { width: 100%; padding: 10px 6px; border: 0; background: transparent; color: var(--accent-text); font: 500 15px/1 var(--font-body); text-align: left; cursor: pointer; border-radius: 10px; }
+.add:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.empty { background: var(--surface); box-shadow: var(--shadow); border-radius: 20px; padding: 44px 20px; text-align: center; display: grid; gap: 16px; justify-items: center; }
+.empty p { margin: 0; color: var(--muted); max-width: 42ch; font-size: 16px; }
+
+/* Exámenes */
+.xlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+.pill { font: 600 12px/1 var(--font-body); padding: 5px 10px; border-radius: 980px; background: var(--fill); color: var(--fg); white-space: nowrap; }
+.pill.warm { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.pill.hot { color: var(--crit); background: color-mix(in srgb, var(--crit) 14%, transparent); }
+.xtop { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.xwhen { font-size: 14px; color: var(--muted); }
+.xprog { display: grid; gap: 6px; }
+.xprog .prog-l { font-size: 12.5px; }
+.grade { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.grade input { width: 72px; padding: 8px 10px; text-align: center; }
+
+/* Ajustes */
+.group { background: var(--surface); box-shadow: var(--shadow); border-radius: 18px; padding: 6px 18px; display: grid; }
+.setrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 0; }
+.setrow + .setrow { border-top: 0.5px solid var(--line); }
+.setrow .t { font-weight: 600; font-size: 15px; }
+.setrow .d { font-size: 13px; color: var(--muted); max-width: 52ch; }
+.setrow .l { min-width: 0; display: grid; gap: 2px; }
+.sec-h { margin: 8px 4px -8px; font: 600 13px/1 var(--font-body); color: var(--muted); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Barra de pestañas y botón flotante */
+.tabbar { position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(var(--lift) + env(safe-area-inset-bottom, 0px)); z-index: 10; display: flex; justify-content: center; background: var(--bar-bg); -webkit-backdrop-filter: saturate(1.8) blur(20px); backdrop-filter: saturate(1.8) blur(20px); border: 0.5px solid var(--line); border-radius: 24px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12); padding: 5px 8px; max-width: 520px; margin: 0 auto; }
+.tabs { display: flex; width: 100%; max-width: 520px; }
+.tab { flex: 1; display: grid; justify-items: center; gap: 3px; padding: 6px 4px; border: 0; background: none; color: var(--muted); font: 500 11px/1 var(--font-body); cursor: pointer; border-radius: 10px; }
+.tab svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { color: var(--accent-text); }
+
+
+/* Hojas modales */
+.scrim { position: fixed; inset: 0; z-index: 40; background: var(--scrim); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); display: grid; place-items: end center; padding-top: max(16px, env(safe-area-inset-top, 0px)); padding-bottom: 0; padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px)); }
+.modal { background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: 0 -10px 60px rgba(0, 0, 0, 0.22); width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 22px 20px calc(22px + var(--lift) + env(safe-area-inset-bottom, 0px)); }
+.modal h2 { margin: 0 0 16px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+form { display: grid; gap: 16px; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+label { display: grid; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); min-width: 0; }
+input, select, textarea { font: 400 16px/1.3 var(--font-body); padding: 12px 13px; border: 0; border-radius: 10px; background: var(--fill); color: var(--fg); width: 100%; min-width: 0; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.8; }
+input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 46px; text-align: left; line-height: 1.3; }
+input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: left; min-height: 1.3em; margin: 0; }
+textarea { resize: vertical; min-height: 76px; }
+.sub { display: grid; gap: 8px; }
+.sub-h { font-size: 13px; font-weight: 500; color: var(--muted); }
+.ckrow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.form-actions .spacer { margin-right: auto; }
+.err { margin: 0; font-size: 13px; color: var(--crit); min-height: 1em; }
+
+input[type="checkbox"] {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; padding: 0; margin: 0; flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+input[type="checkbox"]:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-6.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+}
+input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--lift) + 82px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: rgba(40, 40, 44, 0.94); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); color: #FFFFFF; padding: 11px 16px 11px 18px; border-radius: 980px; font-size: 14px; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25); }
+.toast button { background: none; border: 0; padding: 0; color: #64B5FF; font: 600 14px/1 var(--font-body); cursor: pointer; }
+
+/* Pantalla de bloqueo */
+.lock { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-content: center; justify-items: center; gap: 22px; padding: 24px 24px calc(24px + var(--lift)); text-align: center; }
+.lock h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.lock-dots { display: flex; gap: 16px; height: 16px; }
+.lock-dots i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--muted); }
+.lock-dots i.on { background: var(--fg); border-color: var(--fg); }
+.lock-dots.shake { animation: shake 0.35s; }
+.keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px 22px; }
+.key { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--fill); color: var(--fg); font: 400 28px/1 var(--font-body); cursor: pointer; }
+.key:active { background: var(--line); }
+.key.ghost { background: none; font-size: 15px; color: var(--muted); }
+.key.void { visibility: hidden; }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-9px); } 60% { transform: translateX(9px); } }
+
+@media (min-width: 900px) {
+  .head-new { width: auto; height: auto; padding: 11px 18px; border-radius: 980px; }
+  .hn-plus { display: none; }
+  .hn-text { display: inline; }
+  .quick { display: grid; }
+  .board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .col { display: grid; }
+  .col-head { display: flex; }
+  #seg-status { display: none; }
+  .filters { flex: 1 1 420px; flex-wrap: wrap; overflow: visible; padding: 0; margin: 0; }
+  .search { flex: 0 1 240px; }
+  .scrim { place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  .modal { border-radius: 22px; padding: 24px 24px calc(24px + var(--lift)); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); }
+  .toast { bottom: calc(var(--lift) + 82px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 899px) {
+  .quick #q-title { grid-column: 1 / -1; }
+}
+@media (pointer: coarse) {
+  .btn.mini { padding: 10px 16px; min-height: 40px; }
+  .fchip { min-height: 40px; }
+  .ck { min-height: 32px; align-items: center; }
+  .segbtn { padding-block: 10px; }
+  .add { padding-block: 13px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar i { transition: width 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); }
+  .btn, .fchip, .add, .card { transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; }
+  .modal { animation: sheet 0.26s cubic-bezier(0.25, 0.1, 0.25, 1); }
+  @keyframes sheet { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <p class="eyebrow">ESIC · DAW + DAM · Curso 2026-27</p>
+      <h1 id="h-title">Tareas</h1>
+    </div>
+    <button class="btn primary head-new" id="head-new" type="button" aria-label="Nueva tarea"><span class="hn-plus" aria-hidden="true">+</span><span class="hn-text">Nueva tarea</span></button>
+  </header>
+
+  <div id="note" class="note" hidden role="status"></div>
+
+  <!-- Tareas -->
+  <section class="view" id="v-tasks" aria-label="Tareas">
+    <form class="quick" id="quick" autocomplete="off">
+      <input id="q-title" type="text" maxlength="140" placeholder="Añadir tarea rápida y pulsar Intro" aria-label="Título de la tarea rápida">
+      <select id="q-subject" aria-label="Asignatura de la tarea rápida"></select>
+      <input id="q-due" type="date" aria-label="Fecha de entrega de la tarea rápida">
+      <button class="btn primary" type="submit">Añadir</button>
+    </form>
+
+    <div class="strip" id="strip"></div>
+
+    <div class="toolbar">
+      <nav class="filters" id="filters" aria-label="Filtrar por asignatura"></nav>
+      <input class="search" id="search" type="search" placeholder="Buscar tarea…" aria-label="Buscar tarea">
+    </div>
+
+    <div class="seg" id="seg-status" role="tablist" aria-label="Estado"></div>
+
+    <div id="board" class="board"></div>
+  </section>
+
+  <!-- Exámenes -->
+  <section class="view" id="v-exams" aria-label="Exámenes" hidden>
+    <div class="strip" id="x-strip"></div>
+    <div class="seg" id="seg-exams" role="tablist" aria-label="Exámenes"></div>
+    <div class="xlist" id="x-list"></div>
+  </section>
+
+  <!-- Ajustes -->
+  <section class="view" id="v-settings" aria-label="Ajustes" hidden>
+    <h3 class="sec-h">Seguridad</h3>
+    <div class="group">
+      <div class="setrow">
+        <div class="l"><span class="t">Bloqueo con PIN</span><span class="d" id="pin-desc"></span></div>
+        <div class="acts"><button class="btn" id="btn-pin" type="button">Activar PIN</button></div>
+      </div>
+    </div>
+
+    <h3 class="sec-h">Copia de seguridad</h3>
+    <div class="group">
+      <div class="setrow">
+        <div class="l"><span class="t">Exportar copia</span><span class="d" id="backup-desc">Guarda un archivo con todas tus tareas y exámenes.</span></div>
+        <div class="acts"><button class="btn" id="btn-export" type="button">Exportar</button></div>
+      </div>
+      <div class="setrow">
+        <div class="l"><span class="t">Importar copia</span><span class="d">Sustituye los datos actuales por los de un archivo exportado.</span></div>
+        <div class="acts"><button class="btn" id="btn-import" type="button">Importar</button><input type="file" id="imp" accept="application/json,.json" hidden></div>
+      </div>
+    </div>
+
+    <h3 class="sec-h">Datos</h3>
+    <div class="group">
+      <div class="setrow" id="row-examples">
+        <div class="l"><span class="t">Quitar ejemplos</span><span class="d">Elimina las tareas y exámenes de ejemplo.</span></div>
+        <div class="acts"><button class="btn" id="btn-clear" type="button">Quitar ejemplos</button></div>
+      </div>
+      <div class="setrow">
+        <div class="l"><span class="t">Borrar todo</span><span class="d">Elimina todas las tareas y exámenes de este dispositivo.</span></div>
+        <div class="acts"><button class="btn danger" id="btn-wipe" type="button">Borrar todo</button></div>
+      </div>
+    </div>
+
+    <h3 class="sec-h">App</h3>
+    <div class="group">
+      <div class="setrow" id="row-install" hidden>
+        <div class="l"><span class="t">Instalar la app</span><span class="d">Añade el panel a tu pantalla de inicio.</span></div>
+        <div class="acts"><button class="btn primary" id="btn-install" type="button">Instalar</button></div>
+      </div>
+      <div class="setrow">
+        <div class="l"><span class="t">Instalación manual</span><span class="d">iPhone: Compartir y luego «Añadir a pantalla de inicio». Android: menú ⋮ y luego «Instalar app».</span></div>
+      </div>
+      <div class="setrow">
+        <div class="l"><span class="t">Tus datos</span><span class="d">Se guardan solo en este dispositivo y no se envían a ningún servidor. Haz copias de vez en cuando.</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabbar" aria-label="Secciones">
+  <div class="tabs">
+    <button class="tab" data-view="tasks" type="button" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>Tareas</button>
+    <button class="tab" data-view="exams" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Exámenes</button>
+    <button class="tab" data-view="settings" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6M14 7h6M4 12h2M10 12h10M4 17h10M18 17h2"/><circle cx="12" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>Ajustes</button>
+  </div>
+</nav>
+
+<!-- Hoja: tarea -->
+<div class="scrim" id="sheet-task" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="t-head">
+    <h2 id="t-head">Nueva tarea</h2>
+    <form id="form-task">
+      <label for="f-title">Título
+        <input id="f-title" type="text" maxlength="140" required autocomplete="off" placeholder="Ej. Ejercicios de la unidad 4">
+      </label>
+      <div class="fields">
+        <label for="f-subject">Asignatura <select id="f-subject"></select></label>
+        <label for="f-kind">Tipo <select id="f-kind"></select></label>
+        <label for="f-due">Fecha de entrega <input id="f-due" type="date"></label>
+        <label for="f-status">Estado
+          <select id="f-status">
+            <option value="todo">Pendiente</option>
+            <option value="doing">En curso</option>
+            <option value="done">Entregada</option>
+          </select>
+        </label>
+        <label for="f-prio">Prioridad
+          <select id="f-prio"><option value="">Normal</option><option value="alta">Alta</option></select>
+        </label>
+      </div>
+      <div class="sub">
+        <span class="sub-h">Subtareas</span>
+        <div id="f-checks" class="sub"></div>
+        <div><button type="button" class="btn mini" id="f-addck">+ Añadir subtarea</button></div>
+      </div>
+      <label for="f-notes">Notas <textarea id="f-notes" maxlength="600" placeholder="Enlace, apartados, lo que pide el profesor…"></textarea></label>
+      <div class="form-actions">
+        <button type="button" class="btn danger spacer" id="f-delete" hidden>Eliminar</button>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hoja: examen -->
+<div class="scrim" id="sheet-exam" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="x-head">
+    <h2 id="x-head">Nuevo examen</h2>
+    <form id="form-exam">
+      <label for="x-title">Título
+        <input id="x-title" type="text" maxlength="140" required autocomplete="off" placeholder="Ej. Parcial de DWEC">
+      </label>
+      <div class="fields">
+        <label for="x-subject">Asignatura <select id="x-subject"></select></label>
+        <label for="x-date">Fecha <input id="x-date" type="date" required></label>
+        <label for="x-time">Hora <input id="x-time" type="time"></label>
+        <label for="x-place">Aula o lugar <input id="x-place" type="text" maxlength="60" placeholder="Ej. Aula 204"></label>
+        <label for="x-grade">Nota (0 a 10) <input id="x-grade" type="text" inputmode="decimal" maxlength="5" placeholder="Cuando la tengas"></label>
+      </div>
+      <div class="sub">
+        <span class="sub-h">Temario para repasar</span>
+        <div id="x-checks" class="sub"></div>
+        <div><button type="button" class="btn mini" id="x-addck">+ Añadir tema</button></div>
+      </div>
+      <label for="x-notes">Notas <textarea id="x-notes" maxlength="600" placeholder="Material permitido, tipo de examen…"></textarea></label>
+      <p class="err" id="x-err" role="alert"></p>
+      <div class="form-actions">
+        <button type="button" class="btn danger spacer" id="x-delete" hidden>Eliminar</button>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hoja: PIN -->
+<div class="scrim" id="sheet-pin" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="p-head">
+    <h2 id="p-head">Bloqueo con PIN</h2>
+    <form id="form-pin" autocomplete="off">
+      <label for="p-cur" id="p-cur-wrap">PIN actual <input id="p-cur" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+      <label for="p-new">PIN nuevo (4 a 6 cifras) <input id="p-new" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+      <label for="p-new2">Repite el PIN nuevo <input id="p-new2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+      <p class="err" id="p-err" role="alert"></p>
+      <div class="form-actions">
+        <button type="button" class="btn danger spacer" id="p-remove" hidden>Quitar PIN</button>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<!-- Bloqueo -->
+<div class="lock" id="lock" hidden>
+  <h2>Panel DAW+DAM</h2>
+  <div class="lock-dots" id="lock-dots" aria-hidden="true"></div>
+  <p class="err" id="lock-msg" role="alert"></p>
+  <div class="keypad" id="keypad">
+    <button class="key" data-k="1" type="button">1</button><button class="key" data-k="2" type="button">2</button><button class="key" data-k="3" type="button">3</button>
+    <button class="key" data-k="4" type="button">4</button><button class="key" data-k="5" type="button">5</button><button class="key" data-k="6" type="button">6</button>
+    <button class="key" data-k="7" type="button">7</button><button class="key" data-k="8" type="button">8</button><button class="key" data-k="9" type="button">9</button>
+    <button class="key void" type="button" tabindex="-1" aria-hidden="true"></button><button class="key" data-k="0" type="button">0</button><button class="key ghost" data-k="del" type="button" aria-label="Borrar">Borrar</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SUBJECTS = [
+    { id: 'digitalizacion', name: 'Digitalización', h: 192 },
+    { id: 'ciberseguridad', name: 'Ciberseguridad', h: 352 },
+    { id: 'ia', name: 'IA', h: 268 },
+    { id: 'dwec', name: 'DWEC', h: 36 },
+    { id: 'despliegue', name: 'Despliegue', h: 150 },
+    { id: 'dwes', name: 'DWES', h: 228 },
+    { id: 'sostenibilidad', name: 'Sostenibilidad', h: 96 },
+    { id: 'ipe', name: 'Itinerario IPE II', h: 318 },
+    { id: 'ingles', name: 'Inglés negocios', h: 18 }
+  ];
+  var SUBJ = {};
+  SUBJECTS.forEach(function (s) { SUBJ[s.id] = s; });
+  var KINDS = ['Ejercicio', 'Práctica', 'Trabajo', 'Examen', 'Estudio'];
+  var STATUS = [
+    { id: 'todo', name: 'Pendiente' },
+    { id: 'doing', name: 'En curso' },
+    { id: 'done', name: 'Entregada' }
+  ];
+  var TITLES = { tasks: 'Tareas', exams: 'Exámenes', settings: 'Ajustes' };
+
+  var TASK_EX = [
+    { title: 'Ejercicios de PHP: funciones y arrays', subject: 'dwes', kind: 'Ejercicio', due: '2026-11-09', status: 'doing', notes: 'Ejemplo: edítala o bórrala.' },
+    { title: 'Ejercicios de JavaScript en un único HTML', subject: 'dwec', kind: 'Ejercicio', due: '2026-11-06', status: 'todo', notes: '' },
+    { title: 'Repasar los apuntes del tema anterior', subject: 'dwec', kind: 'Estudio', due: '2026-11-03', status: 'todo', notes: '' },
+    { title: 'Práctica Apache: virtual hosts', subject: 'despliegue', kind: 'Práctica', due: '2026-11-12', status: 'todo', notes: 'Capturas de cada apartado.' },
+    { title: 'Práctica Docker: contenedor con Nginx', subject: 'despliegue', kind: 'Práctica', due: '2026-11-19', status: 'todo', notes: '' },
+    { title: 'AI Skills Challenge: reto de la sesión', subject: 'ia', kind: 'Ejercicio', due: '2026-11-11', status: 'todo', notes: '' },
+    { title: 'Plan de Digitalización: siguiente fase', subject: 'digitalizacion', kind: 'Trabajo', due: '2026-11-20', status: 'doing', notes: 'Trabajo en grupo.' },
+    { title: 'Lectura teórica de Sostenibilidad', subject: 'sostenibilidad', kind: 'Estudio', due: '', status: 'todo', notes: '' },
+    { title: 'Actividad teórica de Itinerario Personal', subject: 'ipe', kind: 'Trabajo', due: '2026-10-30', status: 'done', notes: '' },
+    { title: 'Business English: writing task', subject: 'ingles', kind: 'Trabajo', due: '2026-10-28', status: 'done', notes: '' }
+  ];
+  var EXAM_EX = [
+    { title: 'Parcial de DWEC', subject: 'dwec', date: '2026-11-18', time: '09:30', place: '', topics: [{ t: 'Eventos y DOM', d: true }, { t: 'Funciones', d: false }, { t: 'Formularios', d: false }], notes: '', grade: null },
+    { title: 'Examen de DWES (PHP)', subject: 'dwes', date: '2026-11-25', time: '', place: '', topics: [{ t: 'Arrays', d: false }, { t: 'Funciones', d: false }], notes: '', grade: null },
+    { title: 'Test de Inglés para los Negocios', subject: 'ingles', date: '2026-10-22', time: '', place: '', topics: [], notes: '', grade: 7.5 }
+  ];
+
+  var KEY = 'panel-daw-dam-v2';
+  var state = { tasks: [], exams: [], pin: '', salt: '', pinLen: 0, seeded: false, lastBackup: '' };
+  var view = 'tasks', filter = null, query = '', activeStatus = 'todo', examTab = 'next';
+  var dragId = null, deferredInstall = null;
+  var editingTask = null, editingExam = null, deleteArmed = false, wipeArmed = false;
+  var openedSheet = null, lastFocus = null;
+  var lockEntry = '', hiddenAt = 0, working = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function newId() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function isoDay(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  /* Fechas */
+  var MS = 864e5;
+  function todayStart() { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function parseDay(s) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '')) return null;
+    var p = s.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]);
+  }
+  function daysTo(s) { var d = parseDay(s); return d ? Math.round((d - todayStart()) / MS) : null; }
+  function fmtDay(s) {
+    var d = parseDay(s);
+    return d ? d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '') : '';
+  }
+  function rel(n) {
+    if (n < -1) return 'hace ' + (-n) + ' d';
+    if (n === -1) return 'ayer';
+    if (n === 0) return 'hoy';
+    if (n === 1) return 'mañana';
+    return 'en ' + n + ' d';
+  }
+  function dueInfo(t) {
+    var n = daysTo(t.due);
+    if (n === null) return { text: 'Sin fecha', cls: 'none' };
+    if (t.status === 'done') return { text: fmtDay(t.due), cls: 'done' };
+    return { text: fmtDay(t.due) + ' · ' + rel(n), cls: n < 0 ? 'over' : (n <= 2 ? 'soon' : '') };
+  }
+  function byDue(a, b) {
+    var pa = a.prio === 'alta' ? 0 : 1, pb = b.prio === 'alta' ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    var x = a.due || '9999-99-99', y = b.due || '9999-99-99';
+    if (x !== y) return x < y ? -1 : 1;
+    return (a.createdAt || 0) - (b.createdAt || 0);
+  }
+  function byDueOnly(a, b) {
+    var x = a.due || '9999-99-99', y = b.due || '9999-99-99';
+    return x < y ? -1 : (x > y ? 1 : (a.createdAt || 0) - (b.createdAt || 0));
+  }
+  function byExam(a, b) {
+    var x = (a.date || '9999-99-99') + ' ' + (a.time || '00:00'), y = (b.date || '9999-99-99') + ' ' + (b.time || '00:00');
+    return x < y ? -1 : (x > y ? 1 : 0);
+  }
+  function fmtNum(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+
+  /* Datos */
+  function seed() {
+    var t = Date.now();
+    state.tasks = TASK_EX.map(function (x, i) { var o = clone(x); o.id = newId(); o.example = true; o.prio = ''; o.checks = []; o.createdAt = t + i; return o; });
+    state.exams = EXAM_EX.map(function (x, i) { var o = clone(x); o.id = newId(); o.example = true; o.createdAt = t + 100 + i; return o; });
+    state.seeded = true;
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var o = JSON.parse(raw); if (o && typeof o === 'object') Object.keys(state).forEach(function (k) { if (o[k] !== undefined) state[k] = o[k]; }); }
+    } catch (e) {}
+    if (!Array.isArray(state.tasks)) state.tasks = [];
+    if (!Array.isArray(state.exams)) state.exams = [];
+    if (!state.seeded) seed();
+  }
+  var persistFailed = false;
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); persistFailed = false; }
+    catch (e) { if (!persistFailed) toast('No se ha podido guardar en este dispositivo. Exporta una copia.'); persistFailed = true; }
+  }
+  function commit() { persist(); render(); }
+  function taskById(id) { return state.tasks.filter(function (t) { return t.id === id; })[0]; }
+  function examById(id) { return state.exams.filter(function (t) { return t.id === id; })[0]; }
+  function putIn(list, id, data) {
+    data.id = id;
+    var i = list.map(function (t) { return t.id; }).indexOf(id);
+    if (i === -1) list.push(data); else list[i] = data;
+  }
+
+  /* Avisos */
+  var toastTimer;
+  function toast(msg, label, fn) {
+    var el = $('toast');
+    el.innerHTML = '<span>' + esc(msg) + '</span>' + (label ? '<button type="button" id="toast-act">' + esc(label) + '</button>' : '');
+    el.hidden = false;
+    if (label) $('toast-act').addEventListener('click', function () { el.hidden = true; clearTimeout(toastTimer); fn(); });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.hidden = true; }, label ? 7000 : 3500);
+  }
+
+  /* Render: tareas */
+  function matches(t) {
+    if (filter && t.subject !== filter) return false;
+    if (!query) return true;
+    var s = SUBJ[t.subject] ? SUBJ[t.subject].name : '';
+    return (t.title + ' ' + (t.notes || '') + ' ' + s + ' ' + (t.kind || '')).toLowerCase().indexOf(query) !== -1;
+  }
+  function renderTaskStrip() {
+    var tasks = state.tasks;
+    var total = tasks.length;
+    var done = tasks.filter(function (t) { return t.status === 'done'; }).length;
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var open = tasks.filter(function (t) { return t.status !== 'done'; });
+    var overdue = open.filter(function (t) { var n = daysTo(t.due); return n !== null && n < 0; }).length;
+    var upcoming = open.filter(function (t) { var n = daysTo(t.due); return n !== null && n >= 0; }).sort(byDueOnly)[0];
+    var nextHtml;
+    if (upcoming) {
+      var s = SUBJ[upcoming.subject] || { name: 'Otra' };
+      nextHtml = '<span class="what">' + esc(upcoming.title) + '</span><span class="when">' + esc(s.name) + ' · ' + esc(fmtDay(upcoming.due) + ' · ' + rel(daysTo(upcoming.due))) + '</span>';
+    } else {
+      nextHtml = '<span class="what">Nada con fecha pendiente</span>';
+    }
+    if (overdue) nextHtml += '<span class="when over-n">' + overdue + (overdue === 1 ? ' tarea vencida' : ' tareas vencidas') + '</span>';
+    $('strip').innerHTML =
+      '<div class="prog"><div class="prog-l"><span>Progreso</span><span>' + done + ' de ' + total + ' entregadas</span></div>' +
+      '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div></div>' +
+      '<div class="next"><span class="lbl">Próxima entrega</span>' + nextHtml + '</div>';
+  }
+  function renderFilters() {
+    var openCount = {};
+    state.tasks.forEach(function (t) { if (t.status !== 'done') openCount[t.subject] = (openCount[t.subject] || 0) + 1; });
+    var totalOpen = state.tasks.filter(function (t) { return t.status !== 'done'; }).length;
+    var html = '<button class="fchip" data-f="" aria-pressed="' + (filter === null) + '"><span>Todas</span><span class="n">' + totalOpen + '</span></button>';
+    SUBJECTS.forEach(function (s) {
+      html += '<button class="fchip" data-f="' + s.id + '" aria-pressed="' + (filter === s.id) + '"><span class="dot" style="--h:' + s.h + '"></span><span>' + esc(s.name) + '</span><span class="n">' + (openCount[s.id] || 0) + '</span></button>';
+    });
+    $('filters').innerHTML = html;
+  }
+  function cardHtml(t) {
+    var s = SUBJ[t.subject] || { name: 'Otra', h: 220 };
+    var di = dueInfo(t);
+    var act = t.status === 'todo' ? ['doing', 'Empezar'] : (t.status === 'doing' ? ['done', 'Entregar'] : ['todo', 'Reabrir']);
+    var checks = Array.isArray(t.checks) ? t.checks : [];
+    var doneN = checks.filter(function (c) { return c.d; }).length;
+    var cks = '';
+    if (checks.length) {
+      cks = '<ul class="cks">' + checks.map(function (c, i) {
+        return '<li><label class="ck"><input type="checkbox" data-act="ck" data-id="' + esc(t.id) + '" data-i="' + i + '"' + (c.d ? ' checked' : '') + '><span class="' + (c.d ? 'dn' : '') + '">' + esc(c.t) + '</span></label></li>';
+      }).join('') + '</ul>';
+    }
+    return '<article class="card' + (t.status === 'done' ? ' is-done' : '') + '" draggable="true" data-id="' + esc(t.id) + '">' +
+      '<div class="row"><span class="chip"><i class="dt" style="--h:' + s.h + '"></i>' + esc(s.name) + '</span>' +
+      (t.kind ? '<span class="kind">' + esc(t.kind) + '</span>' : '') +
+      (t.prio === 'alta' ? '<span class="hi">Alta</span>' : '') +
+      (t.example ? '<span class="ex">ejemplo</span>' : '') + '</div>' +
+      '<button class="ttl" data-act="edit" data-id="' + esc(t.id) + '">' + esc(t.title) + '</button>' +
+      (t.notes ? '<p class="notes">' + esc(t.notes) + '</p>' : '') + cks +
+      '<div class="foot"><span class="meta"><span class="due ' + di.cls + '">' + esc(di.text) + '</span>' +
+      (checks.length ? '<span class="cnt">' + doneN + '/' + checks.length + '</span>' : '') + '</span>' +
+      '<button class="btn mini" data-act="move" data-to="' + act[0] + '" data-id="' + esc(t.id) + '">' + act[1] + '</button></div>' +
+      '</article>';
+  }
+  function renderBoard() {
+    var board = $('board');
+    var seg = $('seg-status');
+    if (!state.tasks.length) {
+      seg.hidden = true;
+      board.innerHTML = '<div class="empty"><p>Todavía no hay tareas. Añade la primera con su asignatura y fecha de entrega.</p><button class="btn primary" data-act="new" data-status="todo" type="button">Añadir la primera tarea</button></div>';
+      return;
+    }
+    seg.hidden = false;
+    var segHtml = '', html = '';
+    STATUS.forEach(function (st) {
+      var list = state.tasks.filter(function (t) { return t.status === st.id && matches(t); }).sort(byDue);
+      segHtml += '<button class="segbtn" role="tab" data-st="' + st.id + '" aria-selected="' + (activeStatus === st.id) + '">' + st.name + '<span class="n">' + list.length + '</span></button>';
+      html += '<section class="col' + (activeStatus === st.id ? ' active' : '') + '" data-col="' + st.id + '"><div class="col-head"><h2>' + st.name + '</h2><span class="n">' + list.length + '</span></div>';
+      if (!list.length) html += '<p class="none">' + ((filter || query) ? 'Ninguna tarea coincide' : 'Nada aquí') + '</p>';
+      list.forEach(function (t) { html += cardHtml(t); });
+      if (st.id !== 'done') html += '<button class="add" data-act="new" data-status="' + st.id + '" type="button">+ Añadir tarea</button>';
+      html += '</section>';
+    });
+    seg.innerHTML = segHtml;
+    board.innerHTML = html;
+  }
+
+  /* Render: exámenes */
+  function examHtml(x) {
+    var s = SUBJ[x.subject] || { name: 'Otra', h: 220 };
+    var n = daysTo(x.date);
+    var past = n !== null && n < 0;
+    var pill = '';
+    if (!past && n !== null) pill = '<span class="pill ' + (n <= 1 ? 'hot' : (n <= 7 ? 'warm' : '')) + '">' + (n === 0 ? 'Hoy' : (n === 1 ? 'Mañana' : 'En ' + n + ' d')) + '</span>';
+    var topics = Array.isArray(x.topics) ? x.topics : [];
+    var doneN = topics.filter(function (c) { return c.d; }).length;
+    var pct = topics.length ? Math.round(doneN / topics.length * 100) : 0;
+    var tp = '';
+    if (topics.length) {
+      tp = '<div class="xprog"><div class="prog-l"><span>Repaso</span><span>' + doneN + ' de ' + topics.length + '</span></div><div class="bar"><i style="width:' + pct + '%"></i></div></div>' +
+        '<ul class="cks">' + topics.map(function (c, i) {
+          return '<li><label class="ck"><input type="checkbox" data-act="xck" data-id="' + esc(x.id) + '" data-i="' + i + '"' + (c.d ? ' checked' : '') + '><span class="' + (c.d ? 'dn' : '') + '">' + esc(c.t) + '</span></label></li>';
+        }).join('') + '</ul>';
+    }
+    var grade = past ? '<label class="grade">Nota <input type="text" inputmode="decimal" maxlength="5" data-act="grade" data-id="' + esc(x.id) + '" value="' + (typeof x.grade === 'number' ? fmtNum(x.grade) : '') + '" placeholder="–" aria-label="Nota de ' + esc(x.title) + '"></label>' : '';
+    var when = esc(fmtDay(x.date)) + (x.time ? ' · ' + esc(x.time) : '') + (x.place ? ' · ' + esc(x.place) : '');
+    return '<article class="card" data-id="' + esc(x.id) + '">' +
+      '<div class="xtop"><span class="row"><span class="chip"><i class="dt" style="--h:' + s.h + '"></i>' + esc(s.name) + '</span>' + (x.example ? '<span class="ex">ejemplo</span>' : '') + '</span>' + pill + '</div>' +
+      '<button class="ttl" data-act="xedit" data-id="' + esc(x.id) + '">' + esc(x.title) + '</button>' +
+      '<div class="xwhen">' + when + '</div>' + tp +
+      (x.notes ? '<p class="notes">' + esc(x.notes) + '</p>' : '') +
+      '<div class="foot">' + (grade || '<span></span>') + '<button class="btn mini" data-act="xedit" data-id="' + esc(x.id) + '">Editar</button></div>' +
+      '</article>';
+  }
+  function renderExams() {
+    var upcoming = state.exams.filter(function (x) { var n = daysTo(x.date); return n !== null && n >= 0; }).sort(byExam);
+    var past = state.exams.filter(function (x) { var n = daysTo(x.date); return n === null || n < 0; }).sort(byExam).reverse();
+    var graded = state.exams.filter(function (x) { return typeof x.grade === 'number'; });
+    var avg = graded.length ? graded.reduce(function (a, x) { return a + x.grade; }, 0) / graded.length : null;
+    var nx = upcoming[0], nextHtml;
+    if (nx) {
+      var s = SUBJ[nx.subject] || { name: 'Otra' };
+      nextHtml = '<span class="what">' + esc(nx.title) + '</span><span class="when">' + esc(s.name) + ' · ' + esc(fmtDay(nx.date)) + (nx.time ? ' · ' + esc(nx.time) : '') + ' · ' + rel(daysTo(nx.date)) + '</span>';
+    } else {
+      nextHtml = '<span class="what">Sin exámenes próximos</span>';
+    }
+    $('x-strip').innerHTML =
+      '<div class="next"><span class="lbl">Próximo examen</span>' + nextHtml + '</div>' +
+      '<div class="next"><span class="lbl">Nota media</span><span class="what">' + (avg === null ? '–' : fmtNum(avg)) + '</span><span class="when">' + (graded.length ? graded.length + (graded.length === 1 ? ' examen con nota' : ' exámenes con nota') : 'Aún sin notas') + '</span></div>';
+    $('seg-exams').innerHTML =
+      '<button class="segbtn" role="tab" data-xt="next" aria-selected="' + (examTab === 'next') + '">Próximos<span class="n">' + upcoming.length + '</span></button>' +
+      '<button class="segbtn" role="tab" data-xt="past" aria-selected="' + (examTab === 'past') + '">Pasados<span class="n">' + past.length + '</span></button>';
+    var list = examTab === 'next' ? upcoming : past;
+    if (!list.length) {
+      $('x-list').innerHTML = '<div class="empty" style="grid-column:1/-1"><p>' + (examTab === 'next' ? 'No tienes exámenes próximos. Añade uno con su fecha y el temario a repasar.' : 'Aquí aparecerán los exámenes que ya han pasado, con su nota.') + '</p>' +
+        (examTab === 'next' ? '<button class="btn primary" data-act="xnew" type="button">Añadir examen</button>' : '') + '</div>';
+      return;
+    }
+    $('x-list').innerHTML = list.map(examHtml).join('');
+  }
+
+  /* Render: ajustes */
+  function renderSettings() {
+    var cryptoOk = !!(window.crypto && crypto.subtle);
+    $('pin-desc').textContent = !cryptoOk ? 'El PIN solo funciona abriendo la app desde una dirección https.' :
+      (state.pin ? 'Activado. Se pide al abrir la app y tras un minuto en segundo plano.' : 'Pide un PIN al abrir la app. Es un bloqueo de privacidad, no cifra tus datos.');
+    $('btn-pin').textContent = state.pin ? 'Cambiar o quitar' : 'Activar PIN';
+    $('btn-pin').disabled = !cryptoOk;
+    $('backup-desc').textContent = state.lastBackup ? 'Última copia: ' + new Date(state.lastBackup).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) + '.' : 'Guarda un archivo con todas tus tareas y exámenes.';
+    $('row-examples').hidden = !(state.tasks.some(function (t) { return t.example; }) || state.exams.some(function (x) { return x.example; }));
+    $('row-install').hidden = !deferredInstall;
+    $('btn-wipe').textContent = wipeArmed ? 'Pulsa otra vez para borrar' : 'Borrar todo';
+  }
+
+  function render() {
+    if (!$('lock').hidden) return;
+    $('h-title').textContent = TITLES[view];
+    ['tasks', 'exams', 'settings'].forEach(function (v) { $('v-' + v).hidden = view !== v; });
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
+      if (b.getAttribute('data-view') === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    $('head-new').hidden = view === 'settings';
+    $('head-new').querySelector('.hn-text').textContent = view === 'exams' ? 'Nuevo examen' : 'Nueva tarea';
+    $('head-new').setAttribute('aria-label', view === 'exams' ? 'Nuevo examen' : 'Nueva tarea');
+    document.title = 'Panel DAW+DAM';
+    if (view === 'tasks') { renderTaskStrip(); renderFilters(); renderBoard(); }
+    else if (view === 'exams') renderExams();
+    else renderSettings();
+  }
+  function setView(v) { view = v; wipeArmed = false; render(); window.scrollTo(0, 0); }
+
+  /* Hojas modales */
+  function showSheet(el, focusEl) {
+    lastFocus = document.activeElement;
+    openedSheet = el; el.hidden = false;
+    if (focusEl) { try { focusEl.focus(); } catch (e) {} }
+  }
+  function hideSheet() {
+    if (!openedSheet) return;
+    openedSheet.hidden = true; openedSheet = null;
+    if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.scrim'), function (sc) {
+    sc.addEventListener('mousedown', function (e) { if (e.target === sc) hideSheet(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (b) { b.addEventListener('click', hideSheet); });
+
+  /* Lista de comprobación reutilizable (subtareas y temario) */
+  function Checklist(box, addBtn, label) {
+    var items = [];
+    function draw() {
+      box.innerHTML = items.map(function (c, i) {
+        return '<div class="ckrow"><input type="checkbox" data-i="' + i + '" aria-label="Hecho"' + (c.d ? ' checked' : '') + '>' +
+          '<input type="text" data-i="' + i + '" maxlength="100" value="' + esc(c.t) + '" aria-label="' + label + ' ' + (i + 1) + '" placeholder="' + label + '">' +
+          '<button type="button" class="btn mini" data-rm="' + i + '">Quitar</button></div>';
+      }).join('');
+    }
+    function add() {
+      items.push({ t: '', d: false }); draw();
+      var els = box.querySelectorAll('input[type=text]');
+      if (els.length) els[els.length - 1].focus();
+    }
+    box.addEventListener('input', function (e) {
+      var i = e.target.getAttribute('data-i');
+      if (i !== null && e.target.type === 'text') items[+i].t = e.target.value;
+    });
+    box.addEventListener('change', function (e) {
+      var i = e.target.getAttribute('data-i');
+      if (i !== null && e.target.type === 'checkbox') items[+i].d = e.target.checked;
+    });
+    box.addEventListener('click', function (e) {
+      var rm = e.target.getAttribute('data-rm');
+      if (rm !== null) { items.splice(+rm, 1); draw(); }
+    });
+    box.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target.type === 'text') { e.preventDefault(); add(); }
+    });
+    addBtn.addEventListener('click', add);
+    return {
+      set: function (a) { items = (a || []).map(function (c) { return { t: c.t, d: !!c.d }; }); draw(); },
+      get: function () { return items.filter(function (c) { return c.t.trim(); }).map(function (c) { return { t: c.t.trim(), d: !!c.d }; }); }
+    };
+  }
+  var taskChecks, examChecks;
+
+  /* Hoja de tarea */
+  function openTask(task, status) {
+    editingTask = task || null; deleteArmed = false;
+    $('t-head').textContent = task ? 'Editar tarea' : 'Nueva tarea';
+    $('f-title').value = task ? task.title : '';
+    $('f-subject').value = task ? task.subject : (filter || SUBJECTS[0].id);
+    $('f-kind').value = task && task.kind ? task.kind : KINDS[0];
+    $('f-due').value = task ? (task.due || '') : '';
+    $('f-status').value = task ? task.status : (status || 'todo');
+    $('f-prio').value = task && task.prio === 'alta' ? 'alta' : '';
+    $('f-notes').value = task ? (task.notes || '') : '';
+    taskChecks.set(task && task.checks ? task.checks : []);
+    $('f-delete').textContent = 'Eliminar';
+    $('f-delete').hidden = !task;
+    showSheet($('sheet-task'), $('f-title'));
+  }
+  $('form-task').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = $('f-title').value.trim();
+    if (!title) { $('f-title').focus(); return; }
+    var data = {
+      title: title, subject: $('f-subject').value, kind: $('f-kind').value, due: $('f-due').value || '',
+      status: $('f-status').value, prio: $('f-prio').value, notes: $('f-notes').value.trim(),
+      checks: taskChecks.get(), example: false
+    };
+    var cur = editingTask;
+    hideSheet();
+    if (cur) { data.createdAt = cur.createdAt || Date.now(); putIn(state.tasks, cur.id, data); }
+    else { data.createdAt = Date.now(); data.id = newId(); state.tasks.push(data); activeStatus = data.status; }
+    commit();
+  });
+  $('f-delete').addEventListener('click', function () {
+    if (!editingTask) return;
+    if (!deleteArmed) { deleteArmed = true; $('f-delete').textContent = 'Pulsa otra vez para eliminar'; return; }
+    var copy = clone(editingTask);
+    hideSheet();
+    state.tasks = state.tasks.filter(function (t) { return t.id !== copy.id; });
+    commit();
+    toast('Tarea eliminada.', 'Deshacer', function () { state.tasks.push(copy); commit(); });
+  });
+
+  /* Hoja de examen */
+  function openExam(x) {
+    editingExam = x || null; deleteArmed = false;
+    $('x-head').textContent = x ? 'Editar examen' : 'Nuevo examen';
+    $('x-title').value = x ? x.title : '';
+    $('x-subject').value = x ? x.subject : (filter || SUBJECTS[0].id);
+    $('x-date').value = x ? (x.date || '') : '';
+    $('x-time').value = x ? (x.time || '') : '';
+    $('x-place').value = x ? (x.place || '') : '';
+    $('x-grade').value = x && typeof x.grade === 'number' ? fmtNum(x.grade) : '';
+    $('x-notes').value = x ? (x.notes || '') : '';
+    $('x-err').textContent = '';
+    examChecks.set(x && x.topics ? x.topics : []);
+    $('x-delete').textContent = 'Eliminar';
+    $('x-delete').hidden = !x;
+    showSheet($('sheet-exam'), $('x-title'));
+  }
+  function parseGrade(v) {
+    v = String(v || '').trim().replace(',', '.');
+    if (v === '') return { ok: true, val: null };
+    var n = Number(v);
+    if (!isFinite(n) || n < 0 || n > 10) return { ok: false };
+    return { ok: true, val: Math.round(n * 100) / 100 };
+  }
+  $('form-exam').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = $('x-title').value.trim();
+    if (!title) { $('x-title').focus(); return; }
+    if (!parseDay($('x-date').value)) { $('x-err').textContent = 'Elige la fecha del examen.'; $('x-date').focus(); return; }
+    var g = parseGrade($('x-grade').value);
+    if (!g.ok) { $('x-err').textContent = 'La nota debe estar entre 0 y 10.'; $('x-grade').focus(); return; }
+    var data = {
+      title: title, subject: $('x-subject').value, date: $('x-date').value, time: $('x-time').value || '',
+      place: $('x-place').value.trim(), topics: examChecks.get(), notes: $('x-notes').value.trim(), grade: g.val, example: false
+    };
+    var cur = editingExam;
+    hideSheet();
+    if (cur) { data.createdAt = cur.createdAt || Date.now(); putIn(state.exams, cur.id, data); }
+    else { data.createdAt = Date.now(); data.id = newId(); state.exams.push(data); }
+    var n = daysTo(data.date);
+    examTab = n !== null && n < 0 ? 'past' : 'next';
+    commit();
+  });
+  $('x-delete').addEventListener('click', function () {
+    if (!editingExam) return;
+    if (!deleteArmed) { deleteArmed = true; $('x-delete').textContent = 'Pulsa otra vez para eliminar'; return; }
+    var copy = clone(editingExam);
+    hideSheet();
+    state.exams = state.exams.filter(function (x) { return x.id !== copy.id; });
+    commit();
+    toast('Examen eliminado.', 'Deshacer', function () { state.exams.push(copy); commit(); });
+  });
+
+  /* Eventos: tareas */
+  $('board').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
+    if (act === 'new') openTask(null, b.getAttribute('data-status'));
+    else if (act === 'edit') { var t = taskById(id); if (t) openTask(t); }
+    else if (act === 'move') {
+      var t2 = taskById(id); if (!t2) return;
+      t2.status = b.getAttribute('data-to'); activeStatus = t2.status; commit();
+    } else if (act === 'ck') {
+      var t3 = taskById(id), i = +b.getAttribute('data-i');
+      if (t3 && t3.checks && t3.checks[i]) { t3.checks[i].d = b.checked; commit(); }
+    }
+  });
+  $('filters').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-f]');
+    if (!b) return;
+    filter = b.getAttribute('data-f') || null;
+    if (filter) $('q-subject').value = filter;
+    render();
+  });
+  $('seg-status').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-st]');
+    if (b) { activeStatus = b.getAttribute('data-st'); renderBoard(); }
+  });
+  $('search').addEventListener('input', function (e) { query = e.target.value.trim().toLowerCase(); renderBoard(); });
+  $('quick').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = $('q-title').value.trim();
+    if (!title) { $('q-title').focus(); return; }
+    state.tasks.push({ id: newId(), title: title, subject: $('q-subject').value, kind: KINDS[0], due: $('q-due').value || '', status: 'todo', prio: '', notes: '', checks: [], example: false, createdAt: Date.now() });
+    $('q-title').value = ''; $('q-due').value = '';
+    commit();
+    $('q-title').focus();
+  });
+
+  /* Eventos: exámenes */
+  $('seg-exams').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-xt]');
+    if (b) { examTab = b.getAttribute('data-xt'); renderExams(); }
+  });
+  $('x-list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
+    if (act === 'xnew') openExam(null);
+    else if (act === 'xedit') { var x = examById(id); if (x) openExam(x); }
+    else if (act === 'xck') {
+      var x2 = examById(id), i = +b.getAttribute('data-i');
+      if (x2 && x2.topics && x2.topics[i]) { x2.topics[i].d = b.checked; commit(); }
+    }
+  });
+  $('x-list').addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.getAttribute('data-act') !== 'grade') return;
+    var x = examById(el.getAttribute('data-id'));
+    if (!x) return;
+    var g = parseGrade(el.value);
+    if (!g.ok) { toast('La nota debe estar entre 0 y 10.'); el.value = typeof x.grade === 'number' ? fmtNum(x.grade) : ''; return; }
+    x.grade = g.val; commit();
+  });
+
+  /* Navegación y botones de nuevo */
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
+    b.addEventListener('click', function () {
+      var v = b.getAttribute('data-view');
+      if (v === view) window.scrollTo(0, 0); else setView(v);
+    });
+  });
+  function newItem() { if (view === 'exams') openExam(null); else if (view === 'tasks') openTask(null, activeStatus); }
+  $('head-new').addEventListener('click', newItem);
+
+  /* Arrastrar y soltar (pantallas anchas) */
+  var board = $('board');
+  function clearOver() { Array.prototype.forEach.call(board.querySelectorAll('.col.over'), function (c) { c.classList.remove('over'); }); }
+  board.addEventListener('dragstart', function (e) {
+    var c = e.target.closest('.card');
+    if (!c) return;
+    dragId = c.getAttribute('data-id');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', dragId); } catch (err) {}
+    c.classList.add('drag');
+  });
+  board.addEventListener('dragend', function () {
+    dragId = null; clearOver();
+    Array.prototype.forEach.call(board.querySelectorAll('.card.drag'), function (c) { c.classList.remove('drag'); });
+  });
+  board.addEventListener('dragover', function (e) {
+    var col = e.target.closest('.col');
+    if (!col || !dragId) return;
+    e.preventDefault(); clearOver(); col.classList.add('over');
+  });
+  board.addEventListener('drop', function (e) {
+    var col = e.target.closest('.col');
+    if (!col || !dragId) return;
+    e.preventDefault();
+    var to = col.getAttribute('data-col'), id = dragId;
+    dragId = null; clearOver();
+    var t = taskById(id);
+    if (t && t.status !== to) { t.status = to; commit(); }
+  });
+
+  /* Ajustes: copia de seguridad */
+  function exportData() {
+    var json = JSON.stringify({ app: 'panel-daw-dam', version: 2, exportedAt: new Date().toISOString(), tasks: state.tasks, exams: state.exams }, null, 2);
+    var name = 'panel-daw-dam-' + isoDay(new Date()) + '.json';
+    var file = null;
+    try { file = new File([json], name, { type: 'application/json' }); } catch (e) {}
+    function done() { state.lastBackup = new Date().toISOString(); persist(); renderSettings(); }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      navigator.share({ files: [file], title: 'Copia del panel' }).then(done).catch(function () {});
+      return;
+    }
+    var url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+    done();
+  }
+  $('btn-export').addEventListener('click', exportData);
+  $('btn-import').addEventListener('click', function () { $('imp').click(); });
+  $('imp').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var o = JSON.parse(String(r.result));
+        if (!o || !Array.isArray(o.tasks) || !Array.isArray(o.exams)) throw new Error('formato');
+        var prev = { tasks: state.tasks, exams: state.exams };
+        state.tasks = o.tasks.filter(function (t) { return t && typeof t.title === 'string'; });
+        state.exams = o.exams.filter(function (x) { return x && typeof x.title === 'string'; });
+        state.tasks.forEach(function (t) { if (!t.id) t.id = newId(); });
+        state.exams.forEach(function (x) { if (!x.id) x.id = newId(); });
+        state.seeded = true;
+        commit();
+        toast('Copia importada.', 'Deshacer', function () { state.tasks = prev.tasks; state.exams = prev.exams; commit(); });
+      } catch (err) { toast('Ese archivo no es una copia válida del panel.'); }
+    };
+    r.readAsText(f);
+  });
+  $('btn-clear').addEventListener('click', function () {
+    state.tasks = state.tasks.filter(function (t) { return !t.example; });
+    state.exams = state.exams.filter(function (x) { return !x.example; });
+    commit();
+  });
+  $('btn-wipe').addEventListener('click', function () {
+    if (!wipeArmed) { wipeArmed = true; renderSettings(); return; }
+    wipeArmed = false;
+    var prev = { tasks: state.tasks, exams: state.exams };
+    state.tasks = []; state.exams = []; state.seeded = true;
+    commit();
+    toast('Datos borrados.', 'Deshacer', function () { state.tasks = prev.tasks; state.exams = prev.exams; commit(); });
+  });
+  $('btn-install').addEventListener('click', function () {
+    if (!deferredInstall) return;
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(function () { deferredInstall = null; renderSettings(); });
+  });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredInstall = e; if (view === 'settings') renderSettings(); });
+  window.addEventListener('appinstalled', function () { deferredInstall = null; if (view === 'settings') renderSettings(); });
+
+  /* PIN */
+  function hashPin(pin, salt) {
+    var buf = new TextEncoder().encode('daw:' + salt + ':' + pin);
+    return crypto.subtle.digest('SHA-256', buf).then(function (d) {
+      return Array.prototype.map.call(new Uint8Array(d), function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join('');
+    });
+  }
+  function randomSalt() {
+    var a = new Uint8Array(12); crypto.getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join('');
+  }
+  $('btn-pin').addEventListener('click', function () {
+    ['p-cur', 'p-new', 'p-new2'].forEach(function (id) { $(id).value = ''; });
+    $('p-err').textContent = '';
+    $('p-cur-wrap').hidden = !state.pin;
+    $('p-remove').hidden = !state.pin;
+    showSheet($('sheet-pin'), state.pin ? $('p-cur') : $('p-new'));
+  });
+  function checkCurrent() {
+    if (!state.pin) return Promise.resolve(true);
+    return hashPin($('p-cur').value, state.salt).then(function (h) { return h === state.pin; });
+  }
+  $('form-pin').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var n1 = $('p-new').value, n2 = $('p-new2').value;
+    checkCurrent().then(function (ok) {
+      if (!ok) { $('p-err').textContent = 'El PIN actual no es correcto.'; return; }
+      if (!/^\d{4,6}$/.test(n1)) { $('p-err').textContent = 'El PIN nuevo debe tener entre 4 y 6 cifras.'; return; }
+      if (n1 !== n2) { $('p-err').textContent = 'Los dos PIN no coinciden.'; return; }
+      var salt = randomSalt();
+      return hashPin(n1, salt).then(function (h) {
+        state.salt = salt; state.pin = h; state.pinLen = n1.length;
+        hideSheet(); commit(); toast('PIN activado.');
+      });
+    });
+  });
+  $('p-remove').addEventListener('click', function () {
+    checkCurrent().then(function (ok) {
+      if (!ok) { $('p-err').textContent = 'El PIN actual no es correcto.'; return; }
+      state.pin = ''; state.salt = ''; state.pinLen = 0;
+      hideSheet(); commit(); toast('PIN desactivado.');
+    });
+  });
+
+  /* Bloqueo */
+  function drawDots() {
+    var h = '';
+    for (var i = 0; i < state.pinLen; i++) h += '<i class="' + (i < lockEntry.length ? 'on' : '') + '"></i>';
+    $('lock-dots').innerHTML = h;
+  }
+  function lockApp() {
+    if (!state.pin) return;
+    lockEntry = ''; $('lock-msg').textContent = '';
+    hideSheetSilently();
+    $('lock').hidden = false; document.body.classList.add('is-locked');
+    drawDots();
+  }
+  function hideSheetSilently() { if (openedSheet) { openedSheet.hidden = true; openedSheet = null; } }
+  function unlock() { $('lock').hidden = true; document.body.classList.remove('is-locked'); lockEntry = ''; render(); }
+  function lockKey(k) {
+    if (working) return;
+    if (k === 'del') lockEntry = lockEntry.slice(0, -1);
+    else if (lockEntry.length < state.pinLen) lockEntry += k;
+    $('lock-msg').textContent = '';
+    drawDots();
+    if (lockEntry.length === state.pinLen) {
+      working = true;
+      hashPin(lockEntry, state.salt).then(function (h) {
+        working = false;
+        if (h === state.pin) unlock();
+        else {
+          $('lock-msg').textContent = 'PIN incorrecto';
+          var d = $('lock-dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
+          lockEntry = ''; drawDots();
+        }
+      }).catch(function () { working = false; });
+    }
+  }
+  $('keypad').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-k]');
+    if (b) lockKey(b.getAttribute('data-k'));
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (state.pin && hiddenAt && Date.now() - hiddenAt > 60000) lockApp();
+  });
+
+  /* Teclado */
+  document.addEventListener('keydown', function (e) {
+    if (!$('lock').hidden) {
+      if (/^\d$/.test(e.key)) lockKey(e.key);
+      else if (e.key === 'Backspace') lockKey('del');
+      return;
+    }
+    if (e.key === 'Escape' && openedSheet) { hideSheet(); return; }
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey && !openedSheet && !/INPUT|TEXTAREA|SELECT/.test(tag)) {
+      e.preventDefault(); newItem();
+    }
+  });
+
+  /* Arranque */
+  function fillSelects() {
+    var opts = SUBJECTS.map(function (s) { return '<option value="' + s.id + '">' + esc(s.name) + '</option>'; }).join('');
+    $('f-subject').innerHTML = opts; $('q-subject').innerHTML = opts; $('x-subject').innerHTML = opts;
+    $('f-kind').innerHTML = KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('');
+  }
+  function start() {
+    fillSelects();
+    taskChecks = Checklist($('f-checks'), $('f-addck'), 'Subtarea');
+    examChecks = Checklist($('x-checks'), $('x-addck'), 'Tema');
+    load();
+    persist();
+    if (state.pin && window.crypto && crypto.subtle) { lockApp(); }
+    else { render(); }
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    if ('serviceWorker' in navigator && /^https:$|^http:$/.test(location.protocol) && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
+  }
+  start();
+})();
+</script>
+</body>
+</html>

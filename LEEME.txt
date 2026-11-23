@@ -1,0 +1,34 @@
+PANEL DAW+DAM - APP INSTALABLE
+
+Contenido de esta carpeta
+- index.html: la app entera (tareas, exámenes y ajustes).
+- manifest.webmanifest, sw.js e iconos: lo que hace falta para instalarla y que funcione sin conexión.
+
+Cómo publicarla (hace falta una dirección https)
+Opción rápida, sin cuenta de Git:
+1. Entra en app.netlify.com/drop (te pide crear una cuenta gratuita para que el sitio no caduque).
+2. Arrastra la carpeta entera (o este ZIP descomprimido).
+3. Netlify te da una dirección del tipo https://nombre.netlify.app.
+
+Si ya usas Vercel:
+1. Crea un proyecto nuevo con esta carpeta (por ejemplo, con "vercel" desde la terminal dentro de la carpeta).
+2. Cuando termine, abre la dirección https que te da.
+
+Cómo instalarla en el móvil
+- iPhone (Safari): abre la dirección, toca Compartir y elige "Añadir a pantalla de inicio".
+- Android (Chrome): abre la dirección, menú de los tres puntos y "Instalar app".
+Después ábrela siempre desde el icono.
+
+Quién puede ver tus datos
+- Tus tareas y exámenes se guardan solo en el navegador de tu móvil. No se envían a ningún servidor.
+- Cualquiera que abra la dirección pública ve la app vacía (con los ejemplos), nunca tus datos.
+- Si alguien coge tu móvil desbloqueado, el PIN (Ajustes > Bloqueo con PIN) impide abrir la app. Es un bloqueo de privacidad: no cifra los datos.
+- Para que nadie más pueda ni siquiera cargar la página, activa en el hosting una protección por contraseña (Netlify y Vercel la ofrecen en sus planes de pago o con ajustes del proyecto).
+
+Copias de seguridad
+- Los datos viven solo en ese dispositivo. Si borras los datos del navegador o desinstalas la app, se pierden.
+- En Ajustes > Copia de seguridad puedes exportar un archivo y volver a importarlo, también para pasar los datos a otro móvil.
+
+Actualizar la app
+- Cambia los archivos en el hosting. La app se actualiza sola la segunda vez que la abres con conexión.
+- Si cambias sw.js o los iconos, sube también el número de versión de CACHE dentro de sw.js.
